@@ -75,7 +75,8 @@ Queue.prototype.add = function(payload, opts, callback) {
     }
     self.col.insert(msg, function(err, results) {
         if (err) return callback(err)
-        callback(null, '' + results[0]._id)
+        // console.log('results[0]', results);
+        callback(null, '' + results.ops[0]._id)
     })
 }
 
@@ -104,15 +105,15 @@ Queue.prototype.get = function(opts, callback) {
 
     self.col.findAndModify(query, sort, update, { new : true }, function(err, msg) {
         if (err) return callback(err)
-        if (!msg) return callback()
+        if (!msg.value) return callback(null, {})
 
         // convert to an external representation
         msg = {
             // convert '_id' to an 'id' string
-            id      : '' + msg._id,
-            ack     : msg.ack,
-            payload : msg.payload,
-            tries   : msg.tries,
+            id      : '' + msg.value._id,
+            ack     : msg.value.ack,
+            payload : msg.value.payload,
+            tries   : msg.value.tries,
         }
 
         // if we have a deadQueue, then check the tries, else don't
@@ -161,7 +162,7 @@ Queue.prototype.ping = function(ack, opts, callback) {
         if ( !msg ) {
             return callback(new Error("Queue.ping(): Unidentified ack  : " + ack))
         }
-        callback(null, '' + msg._id)
+        callback(null, '' + msg.value._id)
     })
 }
 
@@ -180,10 +181,10 @@ Queue.prototype.ack = function(ack, callback) {
     }
     self.col.findAndModify(query, undefined, update, { new : true }, function(err, msg, blah) {
         if (err) return callback(err)
-        if ( !msg ) {
+        if ( !msg.value ) {
             return callback(new Error("Queue.ack(): Unidentified ack : " + ack))
         }
-        callback(null, '' + msg._id)
+        callback(null, '' + msg.value._id)
     })
 }
 
